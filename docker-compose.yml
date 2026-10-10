@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sibfu_meetings
+      POSTGRES_USER: sibfu
+      POSTGRES_PASSWORD: sibfu
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sibfu -d sibfu_meetings"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: migrate/migrate:v4.18.1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://sibfu:sibfu@db:5432/sibfu_meetings?sslmode=disable", "up"]
+
+volumes:
+  pgdata:
